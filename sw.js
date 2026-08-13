@@ -6,7 +6,7 @@
 // surface the app's normal "couldn't reach your Sheet" error, not silently
 // serve old numbers.
 
-var CACHE_NAME = 'quoteline-shell-v1';
+var CACHE_NAME = 'quoteline-shell-v2';
 var SHELL_FILES = [
   './quoteline-app.html',
   './manifest.json',
