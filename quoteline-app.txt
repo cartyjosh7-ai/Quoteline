@@ -1,0 +1,660 @@
+<meta charset="utf-8">
+<title>Quoteline — pipeline tracker</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#12201c">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="favicon-32.png" sizes="32x32">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Quoteline">
+<style>
+  :root {
+    color-scheme: light;
+    --ink:        #12201c;
+    --paper:      #f3f5f1;
+    --panel:      #ffffff;
+    --panel-2:    #fbfbf9;
+    --brass:      #a8632c;
+    --brass-ink:  #ffffff;
+    --teal:       #2b5d56;
+    --text-1:     #14201d;
+    --text-2:     #4d5b55;
+    --text-3:     #7c887f;
+    --hairline:   rgba(18,32,28,0.12);
+    --hairline-2: rgba(18,32,28,0.07);
+    --grid:       #e3e6df;
+    --good:       #1f7a3d;
+    --warn:       #a8632c;
+    --critical:   #b5432f;
+    --series-1: #2a78d6;
+    --series-2: #eb6834;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:where(:not([data-theme="light"])) {
+      color-scheme: dark;
+      --ink:        #0d1613; --paper: #0e1512; --panel: #172420; --panel-2: #14201c;
+      --brass:      #d68f4e; --brass-ink: #1a1208; --teal: #7fb3a8;
+      --text-1:     #eef1ec; --text-2: #b7c2bc; --text-3: #86938c;
+      --hairline:   rgba(238,241,236,0.14); --hairline-2: rgba(238,241,236,0.08);
+      --grid:       #263028;
+      --good:       #4fbd6f; --warn: #d68f4e; --critical: #e66767;
+      --series-1: #3987e5; --series-2: #d95926;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --ink:        #0d1613; --paper: #0e1512; --panel: #172420; --panel-2: #14201c;
+    --brass:      #d68f4e; --brass-ink: #1a1208; --teal: #7fb3a8;
+    --text-1:     #eef1ec; --text-2: #b7c2bc; --text-3: #86938c;
+    --hairline:   rgba(238,241,236,0.14); --hairline-2: rgba(238,241,236,0.08);
+    --grid:       #263028;
+    --good:       #4fbd6f; --warn: #d68f4e; --critical: #e66767;
+    --series-1: #3987e5; --series-2: #d95926;
+  }
+  :root[data-theme="light"] {
+    color-scheme: light;
+    --ink:        #12201c; --paper: #f3f5f1; --panel: #ffffff; --panel-2: #fbfbf9;
+    --brass:      #a8632c; --brass-ink: #ffffff; --teal: #2b5d56;
+    --text-1:     #14201d; --text-2: #4d5b55; --text-3: #7c887f;
+    --hairline:   rgba(18,32,28,0.12); --hairline-2: rgba(18,32,28,0.07);
+    --grid:       #e3e6df;
+    --good:       #1f7a3d; --warn: #a8632c; --critical: #b5432f;
+    --series-1: #2a78d6; --series-2: #eb6834;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--paper); color: var(--text-1); font-family: -apple-system, "Segoe UI", system-ui, sans-serif; }
+  body { padding: 0 0 calc(5rem + env(safe-area-inset-bottom)); }
+  h1, h2, h3 { font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, ui-serif, serif; text-wrap: balance; margin: 0; }
+  .tnum { font-variant-numeric: tabular-nums; }
+  a { color: var(--teal); }
+  .wrap { max-width: 64rem; margin: 0 auto; padding: 0 max(1.5rem, env(safe-area-inset-right)) 0 max(1.5rem, env(safe-area-inset-left)); }
+
+  header.masthead { background: var(--ink); color: var(--paper); padding: calc(2.4rem + env(safe-area-inset-top)) 0 2rem; border-bottom: 1px solid var(--hairline); }
+  header.masthead .wrap { display: flex; flex-direction: column; gap: 0.7rem; }
+  .brandrow { display: flex; align-items: center; justify-content: space-between; gap: 0.65rem; flex-wrap: wrap; }
+  .brandleft { display: flex; align-items: center; gap: 0.65rem; }
+  .brandmark { width: 28px; height: 28px; flex: none; }
+  .brandname { font-size: 1.02rem; letter-spacing: 0.04em; text-transform: uppercase; color: var(--paper); opacity: 0.92; }
+  header.masthead h1 { font-size: clamp(1.4rem, 2.8vw, 1.8rem); color: var(--paper); font-weight: 500; line-height: 1.2; max-width: 37rem; }
+
+  .connbadge { display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.76rem; letter-spacing: 0.02em; color: rgba(243,245,241,0.85); border: 1px solid rgba(243,245,241,0.28); border-radius: 100px; padding: 0.32rem 0.75rem 0.32rem 0.6rem; }
+  .connbadge .dot { width: 6px; height: 6px; border-radius: 50%; }
+  .connbadge.live .dot { background: #4fbd6f; }
+  .connbadge.sample .dot { background: var(--brass); }
+  .connbadge.off .dot { background: var(--critical); }
+  .connbadge button { background: none; border: none; color: inherit; font: inherit; font-size: 0.76rem; text-decoration: underline; cursor: pointer; padding: 0; margin-left: 0.3rem; }
+
+  main { padding-top: 2rem; display: flex; flex-direction: column; gap: 1.5rem; }
+  section.card { background: var(--panel); border: 1px solid var(--hairline); border-radius: 14px; padding: 1.6rem 1.75rem 1.8rem; }
+  section.card > header { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap; }
+  section.card > header h2 { font-size: 1.2rem; font-weight: 500; color: var(--text-1); }
+  section.card > header .sub { font-size: 0.83rem; color: var(--text-3); }
+  section.card > p.hint { font-size: 0.86rem; color: var(--text-2); margin: -0.4rem 0 1.05rem; max-width: 44rem; line-height: 1.55; }
+
+  .setup-panel { background: var(--panel-2); border: 1px dashed var(--hairline); border-radius: 10px; padding: 1.1rem 1.3rem; font-size: 0.88rem; color: var(--text-2); line-height: 1.6; }
+  .setup-panel code { background: var(--hairline-2); padding: 0.1rem 0.35rem; border-radius: 4px; font-size: 0.85em; }
+  .setup-panel ol { margin: 0.6rem 0 0; padding-left: 1.2rem; }
+  .setup-panel li { margin-bottom: 0.4rem; }
+
+  .intake { display: flex; gap: 1.2rem; flex-wrap: wrap; }
+  .intake-col { flex: 1 1 16rem; }
+  .intake-col h3 { font-size: 0.95rem; font-weight: 600; color: var(--text-1); margin-bottom: 0.6rem; font-family: inherit; }
+  .dropzone { border: 1.5px dashed var(--hairline); border-radius: 10px; padding: 1rem 1.1rem; display: flex; align-items: center; gap: 0.7rem; color: var(--text-2); font-size: 0.86rem; cursor: pointer; background: var(--panel-2); }
+  .dropzone:hover { border-color: var(--brass); }
+  .dropzone svg { flex: none; width: 20px; height: 20px; color: var(--teal); }
+  .dropzone input { display: none; }
+  form.addquote { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; }
+  form.addquote input, form.addquote select { font: inherit; font-size: 0.86rem; padding: 0.55rem 0.65rem; border: 1px solid var(--hairline); border-radius: 7px; background: var(--panel-2); color: var(--text-1); }
+  form.addquote .full { grid-column: 1 / -1; }
+  button.solidbtn { font: inherit; font-size: 0.86rem; font-weight: 600; background: var(--brass); color: var(--brass-ink); border: 1px solid transparent; border-radius: 8px; padding: 0.62rem 1.05rem; cursor: pointer; }
+  button.solidbtn:hover { filter: brightness(1.06); }
+  button.solidbtn:disabled { opacity: 0.5; cursor: not-allowed; }
+  button.ghostbtn { font: inherit; font-size: 0.86rem; font-weight: 600; background: transparent; color: var(--text-1); border: 1px solid var(--hairline); border-radius: 8px; padding: 0.62rem 1.05rem; cursor: pointer; }
+  button.ghostbtn:hover { border-color: var(--teal); color: var(--teal); }
+  button:focus-visible, .dropzone:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
+  .upload-actions { display: flex; gap: 0.8rem; margin-top: 1rem; flex-wrap: wrap; align-items: center; }
+  .parse-error { margin-top: 0.9rem; font-size: 0.85rem; color: #b5432f; background: color-mix(in srgb, #b5432f 10%, transparent); border: 1px solid color-mix(in srgb, #b5432f 30%, transparent); border-radius: 8px; padding: 0.7rem 0.9rem; display: none; }
+  .previewnote { font-size: 0.8rem; color: var(--brass); margin-top: 0.8rem; }
+  .loadingnote { font-size: 0.86rem; color: var(--text-3); padding: 1rem 0; }
+
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; background: var(--hairline); border: 1px solid var(--hairline); border-radius: 12px; overflow: hidden; }
+  .stat { background: var(--panel); padding: 1.05rem 1.15rem; display: flex; flex-direction: column; gap: 0.35rem; }
+  .stat .label { font-size: 0.71rem; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-3); }
+  .stat .value { font-size: 1.4rem; font-weight: 600; color: var(--text-1); }
+  .stat .delta { font-size: 0.77rem; color: var(--text-2); }
+  @media (max-width: 720px) { .stats { grid-template-columns: repeat(2, 1fr); } }
+
+  table.pipeline { border-collapse: collapse; width: 100%; font-size: 0.86rem; }
+  table.pipeline th, table.pipeline td { text-align: left; padding: 0.6rem 0.7rem; border-bottom: 1px solid var(--hairline-2); white-space: nowrap; }
+  table.pipeline td.num, table.pipeline th.num { text-align: right; font-variant-numeric: tabular-nums; }
+  table.pipeline th { color: var(--text-3); font-weight: 600; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.03em; }
+  .urgency { display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.78rem; font-weight: 700; padding: 0.18rem 0.55rem; border-radius: 100px; }
+  .urgency .dot { width: 6px; height: 6px; border-radius: 50%; }
+  .urgency.cold { color: var(--critical); background: color-mix(in srgb, var(--critical) 13%, transparent); }
+  .urgency.cold .dot { background: var(--critical); }
+  .urgency.soon { color: var(--warn); background: color-mix(in srgb, var(--warn) 13%, transparent); }
+  .urgency.soon .dot { background: var(--warn); }
+  .urgency.ok { color: var(--good); background: color-mix(in srgb, var(--good) 13%, transparent); }
+  .urgency.ok .dot { background: var(--good); }
+  .logbtn { font: inherit; font-size: 0.76rem; font-weight: 600; background: transparent; color: var(--teal); border: 1px solid var(--hairline); border-radius: 6px; padding: 0.32rem 0.6rem; cursor: pointer; }
+  .logbtn:hover { border-color: var(--teal); }
+  .logbtn:disabled { opacity: 0.5; cursor: default; }
+  .tablescroll { overflow-x: auto; }
+
+  .chart-wrap { position: relative; }
+  svg.chart { width: 100%; height: auto; display: block; overflow: visible; }
+  .gridline { stroke: var(--grid); stroke-width: 1; }
+  .axislabel { fill: var(--text-3); font-size: 10.5px; font-family: -apple-system, "Segoe UI", system-ui, sans-serif; }
+  .barlabel { fill: var(--text-1); font-size: 12px; font-weight: 700; font-family: -apple-system, "Segoe UI", system-ui, sans-serif; }
+
+  .insight-note { font-size: 0.78rem; color: var(--text-3); margin-bottom: 1rem; }
+  .insight-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.85rem; }
+  .insight-list li { display: flex; gap: 0.7rem; align-items: flex-start; font-size: 0.94rem; line-height: 1.5; color: var(--text-1); }
+  .insight-list li .mark { flex: none; width: 6px; height: 6px; border-radius: 50%; background: var(--brass); margin-top: 0.55rem; }
+  .insight-list li.flag .mark { background: var(--critical); }
+
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<header class="masthead">
+  <div class="wrap">
+    <div class="brandrow">
+      <div class="brandleft">
+        <svg class="brandmark" viewBox="0 0 30 30" fill="none">
+          <rect x="1" y="1" width="28" height="28" rx="6" stroke="var(--brass)" stroke-width="1.4"/>
+          <path d="M8 15.5 L13 20.5 L22 9.5" stroke="var(--brass)" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="23" cy="8" r="3.4" fill="var(--critical)"/>
+        </svg>
+        <span class="brandname">Quoteline</span>
+      </div>
+      <span class="connbadge" id="connBadge"></span>
+    </div>
+    <h1>The quote you don't chase is the job you already lost.</h1>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <section class="card" id="setupCard" style="display:none;">
+    <header><h2>Connect your Google Sheet</h2></header>
+    <div class="setup-panel">
+      This tracker isn't connected to a Sheet yet, so nothing you add here will be saved. To connect it:
+      <ol>
+        <li>Make a copy of the Quoteline Google Sheet template (or create a new Sheet with a tab named <code>Quotes</code>).</li>
+        <li>Open <strong>Extensions → Apps Script</strong>, paste in the provided <code>Code.gs</code>, and save.</li>
+        <li>Click <strong>Deploy → New deployment → Web app</strong>. Set "Execute as" to yourself and "Who has access" to Anyone.</li>
+        <li>Copy the Web App URL it gives you, and paste it into the <code>API_URL</code> constant near the top of this page's script.</li>
+        <li>Reload this page — it should show "Connected" above.</li>
+      </ol>
+      Until then, you can still explore with sample data below.
+    </div>
+  </section>
+
+  <section class="card">
+    <header><h2>1. Your quotes</h2><span class="sub" id="intakeSub">Upload an export, or start from nothing</span></header>
+    <p class="hint">If you already track quotes in a spreadsheet or export, upload it — it gets added to your connected Sheet. If you don't track them anywhere yet, just start adding them below.</p>
+    <div class="intake">
+      <div class="intake-col">
+        <h3>Upload a file</h3>
+        <label class="dropzone" id="dropzone" tabindex="0">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M12 15V4M12 4L7.5 8.5M12 4l4.5 4.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span><strong>Drop a CSV here</strong> or click to browse</span>
+          <input type="file" id="fileInput" accept=".csv,text/csv" />
+        </label>
+      </div>
+      <div class="intake-col">
+        <h3>Or add one now</h3>
+        <form class="addquote" id="addForm">
+          <input type="text" placeholder="Customer / job" id="f_customer" required>
+          <input type="number" placeholder="Quote amount" id="f_amount" min="0" step="1" required>
+          <input type="date" id="f_date" required>
+          <select id="f_status"><option value="pending">Pending</option><option value="won">Won</option><option value="lost">Lost</option></select>
+          <button class="solidbtn full" type="submit" id="addSubmitBtn">Add quote</button>
+        </form>
+      </div>
+    </div>
+    <div class="upload-actions">
+      <button class="ghostbtn" id="sampleBtn" type="button">Preview with sample data</button>
+      <button class="ghostbtn" id="refreshBtn" type="button" style="display:none;">Refresh from Sheet</button>
+    </div>
+    <div class="previewnote" id="previewNote" style="display:none;">Showing sample data for preview — nothing here is saved.</div>
+    <div class="parse-error" id="parseError"></div>
+  </section>
+
+  <div id="loadingNote" class="loadingnote" style="display:none;">Loading your pipeline…</div>
+
+  <div id="results" style="display:none; flex-direction:column; gap:1.5rem;">
+
+    <section class="card">
+      <header><h2>2. What needs attention today</h2></header>
+      <div class="stats">
+        <div class="stat"><span class="label">Open pipeline value</span><span class="value tnum" id="statPipeline">—</span></div>
+        <div class="stat"><span class="label">Gone cold (5+ days)</span><span class="value tnum" id="statCold">—</span><span class="delta" id="statColdSub"></span></div>
+        <div class="stat"><span class="label">Need a call today</span><span class="value tnum" id="statNeedCall">—</span></div>
+        <div class="stat"><span class="label">Overall close rate</span><span class="value tnum" id="statCloseRate">—</span></div>
+      </div>
+    </section>
+
+    <section class="card">
+      <header><h2>Follow-up speed vs. close rate</h2><span class="sub">Resolved quotes only</span></header>
+      <div class="chart-wrap">
+        <svg class="chart" id="barChart" viewBox="0 0 500 200" preserveAspectRatio="xMidYMid meet"></svg>
+      </div>
+    </section>
+
+    <section class="card">
+      <header><h2>Open pipeline, by urgency</h2><span class="sub">Sorted by days since last contact</span></header>
+      <div class="tablescroll">
+        <table class="pipeline" id="pipelineTable"></table>
+      </div>
+    </section>
+
+    <section class="card">
+      <header><h2>3. What it means</h2></header>
+      <p class="insight-note">Generated on-device from the quotes above — pattern checks, not a language model.</p>
+      <ul class="insight-list" id="insightList"></ul>
+    </section>
+
+  </div>
+
+</main>
+
+<script>
+(function () {
+  "use strict";
+
+  // ---------- config ----------
+  // Paste your Google Apps Script Web App URL here (see the "Connect your
+  // Google Sheet" panel above for setup steps). Leave as-is to run in
+  // preview-only mode with sample data.
+  var API_URL = "https://script.google.com/macros/s/AKfycbwqylM_H-ZBCRqgFGh6PzxbynvrHd4eUrwyFRvdr6I8DolNXPBKZEj7b-mp3vKk1IUI/exec";
+
+  function isConfigured() { return API_URL.indexOf('https://script.google.com') === 0; }
+
+  var currency = new Intl.NumberFormat('en-CA', { style: 'currency', currency: 'CAD', maximumFractionDigits: 0 });
+  var MS_DAY = 86400000;
+  var TODAY = new Date();
+  TODAY.setHours(0, 0, 0, 0);
+
+  var state = { quotes: [], mode: 'none' }; // mode: 'none' | 'sample' | 'live'
+
+  // ---------- shared parsing helpers ----------
+
+  var CUSTOMER_ALIASES = ['customer', 'client', 'job', 'description', 'job description', 'customer / job'];
+  var AMOUNT_ALIASES = ['amount', 'quote', 'quote amount', 'price', 'total'];
+  var DATE_ALIASES = ['date sent', 'quote date', 'sent date', 'date'];
+  var CONTACT_ALIASES = ['last contact', 'last follow up', 'followed up', 'last contacted'];
+  var STATUS_ALIASES = ['status', 'result', 'outcome'];
+
+  function splitCSVLine(line) {
+    var out = [], cur = '', q = false;
+    for (var i = 0; i < line.length; i++) { var c = line[i]; if (c === '"') { q = !q; continue; } if (c === ',' && !q) { out.push(cur); cur = ''; continue; } cur += c; }
+    out.push(cur); return out;
+  }
+  function findColumn(headers, aliases) {
+    for (var a = 0; a < aliases.length; a++) { var idx = headers.indexOf(aliases[a]); if (idx !== -1) return idx; }
+    for (var i = 0; i < headers.length; i++) for (var b = 0; b < aliases.length; b++) if (headers[i].indexOf(aliases[b]) !== -1) return i;
+    return -1;
+  }
+  function parseDateFlexible(str) {
+    var m = /^(\d{4})-(\d{1,2})-(\d{1,2})$/.exec(String(str).trim());
+    if (m) return new Date(parseInt(m[1], 10), parseInt(m[2], 10) - 1, parseInt(m[3], 10));
+    return new Date(str);
+  }
+  function isoDate(d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+  function normStatus(str) {
+    var s = String(str || '').toLowerCase();
+    if (s.indexOf('won') !== -1 || s.indexOf('yes') !== -1 || s.indexOf('close') !== -1) return 'won';
+    if (s.indexOf('lost') !== -1 || s.indexOf('no') !== -1) return 'lost';
+    return 'pending';
+  }
+
+  function parseCSV(text) {
+    var lines = text.split(/\r?\n/).filter(function (l) { return l.trim().length; });
+    if (lines.length < 2) return { error: 'That file has no rows to read.' };
+    var headers = splitCSVLine(lines[0]).map(function (h) { return h.trim().toLowerCase(); });
+    var custCol = findColumn(headers, CUSTOMER_ALIASES);
+    var amtCol = findColumn(headers, AMOUNT_ALIASES);
+    var dateCol = findColumn(headers, DATE_ALIASES);
+    var contactCol = findColumn(headers, CONTACT_ALIASES);
+    var statusCol = findColumn(headers, STATUS_ALIASES);
+    if (amtCol === -1 || dateCol === -1) return { error: 'Couldn\'t find an amount and a date-sent column. Expected headers like "Customer", "Amount", "Date Sent", "Status".' };
+    var quotes = [];
+    for (var i = 1; i < lines.length; i++) {
+      var f = splitCSVLine(lines[i]);
+      if (!f[amtCol]) continue;
+      var amount = parseFloat(String(f[amtCol]).replace(/[^0-9.\-]/g, ''));
+      var sent = parseDateFlexible(f[dateCol]);
+      if (isNaN(amount) || isNaN(sent.getTime())) continue;
+      var contact = contactCol !== -1 && f[contactCol] ? parseDateFlexible(f[contactCol]) : null;
+      if (contact && isNaN(contact.getTime())) contact = null;
+      quotes.push({
+        customer: custCol !== -1 ? (f[custCol] || 'Unlabelled').trim() : 'Unlabelled',
+        amount: amount, sent: sent, contact: contact,
+        status: statusCol !== -1 ? normStatus(f[statusCol]) : 'pending'
+      });
+    }
+    if (!quotes.length) return { error: 'Found the columns, but no rows parsed cleanly. Check the date and amount formatting.' };
+    return { quotes: quotes };
+  }
+
+  function daysBetween(a, b) { return Math.round((b - a) / MS_DAY); }
+
+  // ---------- API layer ----------
+  // NOTE: apiPost intentionally does NOT set a Content-Type header. Apps
+  // Script Web Apps don't respond to CORS preflight (OPTIONS) requests, so
+  // sending JSON with an explicit "application/json" header triggers a
+  // preflight that silently fails. Leaving the header off makes the browser
+  // send it as a "simple request" (text/plain), which Apps Script accepts
+  // fine since it just reads e.postData.contents as a string either way.
+
+  function apiGet() {
+    return fetch(API_URL, { method: 'GET' }).then(function (r) { return r.json(); });
+  }
+  function apiPost(payload) {
+    return fetch(API_URL, { method: 'POST', body: JSON.stringify(payload) }).then(function (r) { return r.json(); });
+  }
+  function mapFromApi(row) {
+    return {
+      id: row.ID,
+      customer: row.Customer,
+      amount: Number(row.Amount),
+      sent: parseDateFlexible(row.DateSent),
+      contact: row.LastContact ? parseDateFlexible(row.LastContact) : null,
+      status: normStatus(row.Status)
+    };
+  }
+
+  // ---------- aggregation + rendering (same for sample or live data) ----------
+
+  function computeAll() {
+    var q = state.quotes;
+    var pending = q.filter(function (x) { return x.status === 'pending'; });
+    var resolved = q.filter(function (x) { return x.status === 'won' || x.status === 'lost'; });
+
+    pending.forEach(function (x) { x.daysSince = daysBetween(x.contact || x.sent, TODAY); });
+    var pipelineValue = pending.reduce(function (s, x) { return s + x.amount; }, 0);
+    var cold = pending.filter(function (x) { return x.daysSince >= 5; });
+    var coldValue = cold.reduce(function (s, x) { return s + x.amount; }, 0);
+    var needCall = pending.filter(function (x) { return x.daysSince >= 3; }).length;
+
+    var fast = resolved.filter(function (x) { return x.contact && daysBetween(x.sent, x.contact) <= 2; });
+    var slow = resolved.filter(function (x) { return !x.contact || daysBetween(x.sent, x.contact) > 2; });
+    var fastWinPct = fast.length ? fast.filter(function (x) { return x.status === 'won'; }).length / fast.length : 0;
+    var slowWinPct = slow.length ? slow.filter(function (x) { return x.status === 'won'; }).length / slow.length : 0;
+    var overallWinPct = resolved.length ? resolved.filter(function (x) { return x.status === 'won'; }).length / resolved.length : 0;
+
+    var sortedPending = pending.slice().sort(function (a, b) { return b.daysSince - a.daysSince; });
+
+    return { pipelineValue: pipelineValue, coldValue: coldValue, coldCount: cold.length, needCall: needCall, fastWinPct: fastWinPct, slowWinPct: slowWinPct, overallWinPct: overallWinPct, sortedPending: sortedPending, fastCount: fast.length, slowCount: slow.length };
+  }
+
+  function urgencyClass(days) { return days >= 5 ? 'cold' : (days >= 3 ? 'soon' : 'ok'); }
+  function urgencyLabel(days) { return days >= 5 ? days + 'd — going cold' : (days >= 3 ? days + 'd — follow up soon' : (days <= 0 ? 'sent today' : days + 'd — on track')); }
+
+  function renderStats(agg) {
+    document.getElementById('statPipeline').textContent = currency.format(agg.pipelineValue);
+    document.getElementById('statCold').textContent = currency.format(agg.coldValue);
+    document.getElementById('statColdSub').textContent = agg.coldCount + ' quote' + (agg.coldCount === 1 ? '' : 's') + ' untouched 5+ days';
+    document.getElementById('statNeedCall').textContent = agg.needCall;
+    document.getElementById('statCloseRate').textContent = (agg.overallWinPct * 100).toFixed(0) + '%';
+  }
+
+  function renderBarChart(agg) {
+    var svg = document.getElementById('barChart');
+    var ns = 'http://www.w3.org/2000/svg';
+    while (svg.firstChild) svg.removeChild(svg.firstChild);
+    var W = 500, H = 200, padL = 90, padR = 40, padT = 20, padB = 30;
+    var rows = [
+      { label: 'Followed up ≤ 2 days', pct: agg.fastWinPct, color: 'var(--series-1)', n: agg.fastCount },
+      { label: 'Followed up later / never', pct: agg.slowWinPct, color: 'var(--series-2)', n: agg.slowCount }
+    ];
+    var barH = 46, gap = 34;
+    var maxW = W - padL - padR;
+    rows.forEach(function (r, i) {
+      var y = padT + i * (barH + gap);
+      var lbl = document.createElementNS(ns, 'text');
+      lbl.setAttribute('x', padL - 10); lbl.setAttribute('y', y + barH / 2 + 4); lbl.setAttribute('text-anchor', 'end'); lbl.setAttribute('class', 'axislabel');
+      lbl.textContent = r.label;
+      svg.appendChild(lbl);
+
+      var track = document.createElementNS(ns, 'rect');
+      track.setAttribute('x', padL); track.setAttribute('y', y); track.setAttribute('width', maxW); track.setAttribute('height', barH); track.setAttribute('rx', 6);
+      track.setAttribute('fill', 'var(--hairline-2)');
+      svg.appendChild(track);
+
+      var w = Math.max(2, maxW * r.pct);
+      var fill = document.createElementNS(ns, 'rect');
+      fill.setAttribute('x', padL); fill.setAttribute('y', y); fill.setAttribute('width', w); fill.setAttribute('height', barH); fill.setAttribute('rx', 6);
+      fill.setAttribute('fill', r.color);
+      svg.appendChild(fill);
+
+      var val = document.createElementNS(ns, 'text');
+      val.setAttribute('x', padL + w + 10); val.setAttribute('y', y + barH / 2 + 5); val.setAttribute('class', 'barlabel');
+      if (w > maxW - 50) { val.setAttribute('x', padL + w - 10); val.setAttribute('text-anchor', 'end'); val.setAttribute('fill', 'white'); }
+      val.textContent = (r.pct * 100).toFixed(0) + '%  (' + r.n + ' quotes)';
+      svg.appendChild(val);
+    });
+  }
+
+  function renderPipelineTable(agg) {
+    var t = document.getElementById('pipelineTable');
+    if (!agg.sortedPending.length) { t.innerHTML = '<tbody><tr><td style="padding:0.8rem 0;color:var(--text-3);">Nothing open right now — pipeline is clear.</td></tr></tbody>'; return; }
+    var html = '<thead><tr><th>Customer / job</th><th class="num">Amount</th><th>Sent</th><th>Status</th><th></th></tr></thead><tbody>';
+    agg.sortedPending.forEach(function (x) {
+      html += '<tr><td>' + x.customer + '</td><td class="num">' + currency.format(x.amount) + '</td><td>' + x.sent.toLocaleDateString('en-CA', { month: 'short', day: 'numeric' }) + '</td>' +
+        '<td><span class="urgency ' + urgencyClass(x.daysSince) + '"><span class="dot"></span>' + urgencyLabel(x.daysSince) + '</span></td>' +
+        '<td><button class="logbtn" data-log="' + x.id + '"' + (state.mode !== 'live' ? ' disabled title="Connect your Sheet to save this"' : '') + '>Log follow-up</button></td></tr>';
+    });
+    html += '</tbody>';
+    t.innerHTML = html;
+    t.querySelectorAll('[data-log]').forEach(function (btn) {
+      btn.addEventListener('click', function () { logFollowUp(btn.getAttribute('data-log')); });
+    });
+  }
+
+  function renderInsights(agg) {
+    var list = document.getElementById('insightList');
+    list.innerHTML = '';
+    var items = [];
+    if (agg.fastCount && agg.slowCount) {
+      var gap = agg.fastWinPct - agg.slowWinPct;
+      items.push({ text: 'Quotes followed up within 2 days close at ' + (agg.fastWinPct * 100).toFixed(0) + '%. Left longer, that drops to ' + (agg.slowWinPct * 100).toFixed(0) + '%.', flag: gap > 0.15 });
+    }
+    if (agg.coldValue > 0) {
+      items.push({ text: currency.format(agg.coldValue) + ' in open quotes hasn\'t been touched in 5+ days.', flag: true });
+    }
+    if (agg.needCall > 0) {
+      items.push({ text: agg.needCall + ' open quote' + (agg.needCall === 1 ? '' : 's') + ' need' + (agg.needCall === 1 ? 's' : '') + ' a call today — see the table above.', flag: false });
+    }
+    items.push({ text: 'Overall close rate across the period is ' + (agg.overallWinPct * 100).toFixed(0) + '%.', flag: false });
+
+    items.forEach(function (it) {
+      var li = document.createElement('li'); if (it.flag) li.className = 'flag';
+      var mark = document.createElement('span'); mark.className = 'mark';
+      var span = document.createElement('span'); span.textContent = it.text;
+      li.appendChild(mark); li.appendChild(span); list.appendChild(li);
+    });
+  }
+
+  function renderAll() {
+    document.getElementById('loadingNote').style.display = 'none';
+    if (!state.quotes.length) { document.getElementById('results').style.display = 'none'; return; }
+    var agg = computeAll();
+    document.getElementById('results').style.display = 'flex';
+    renderStats(agg);
+    renderBarChart(agg);
+    renderPipelineTable(agg);
+    renderInsights(agg);
+  }
+
+  function renderConnBadge() {
+    var el = document.getElementById('connBadge');
+    if (state.mode === 'live') { el.className = 'connbadge live'; el.innerHTML = '<span class="dot"></span>Connected to your Sheet'; }
+    else if (state.mode === 'sample') { el.className = 'connbadge sample'; el.innerHTML = '<span class="dot"></span>Preview mode — not saving'; }
+    else { el.className = 'connbadge off'; el.innerHTML = '<span class="dot"></span>Not connected'; }
+    document.getElementById('setupCard').style.display = isConfigured() ? 'none' : 'block';
+    document.getElementById('refreshBtn').style.display = isConfigured() ? 'inline-block' : 'none';
+    document.getElementById('previewNote').style.display = state.mode === 'sample' ? 'block' : 'none';
+    document.getElementById('addSubmitBtn').disabled = state.mode === 'none';
+    document.getElementById('intakeSub').textContent = isConfigured() ? 'Saved to your connected Sheet' : 'Not connected — see setup panel above';
+  }
+
+  // ---------- live data actions ----------
+
+  function refreshLive() {
+    if (!isConfigured()) { renderConnBadge(); return; }
+    document.getElementById('loadingNote').style.display = 'block';
+    document.getElementById('results').style.display = 'none';
+    apiGet().then(function (res) {
+      if (!res.ok) throw new Error(res.error || 'Unknown error');
+      state.quotes = res.quotes.map(mapFromApi);
+      state.mode = 'live';
+      renderConnBadge();
+      renderAll();
+    }).catch(function (err) {
+      document.getElementById('loadingNote').style.display = 'none';
+      var pe = document.getElementById('parseError');
+      pe.textContent = 'Couldn\'t reach your Sheet: ' + err.message;
+      pe.style.display = 'block';
+    });
+  }
+
+  function logFollowUp(id) {
+    if (state.mode !== 'live') return;
+    apiPost({ action: 'update', id: id, lastContact: isoDate(TODAY) }).then(function (res) {
+      if (!res.ok) throw new Error(res.error || 'Update failed');
+      refreshLive();
+    }).catch(function (err) {
+      var pe = document.getElementById('parseError');
+      pe.textContent = 'Couldn\'t save that update: ' + err.message;
+      pe.style.display = 'block';
+    });
+  }
+
+  // ---------- intake wiring ----------
+
+  document.getElementById('f_date').valueAsDate = TODAY;
+
+  document.getElementById('addForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+    if (state.mode !== 'live') return;
+    var customer = document.getElementById('f_customer').value.trim();
+    var amount = parseFloat(document.getElementById('f_amount').value);
+    var dateVal = document.getElementById('f_date').value;
+    var status = document.getElementById('f_status').value;
+    if (!customer || isNaN(amount) || !dateVal) return;
+    apiPost({ action: 'add', customer: customer, amount: amount, dateSent: dateVal, status: status }).then(function (res) {
+      if (!res.ok) throw new Error(res.error || 'Add failed');
+      document.getElementById('f_customer').value = '';
+      document.getElementById('f_amount').value = '';
+      document.getElementById('parseError').style.display = 'none';
+      refreshLive();
+    }).catch(function (err) {
+      var pe = document.getElementById('parseError');
+      pe.textContent = 'Couldn\'t save that quote: ' + err.message;
+      pe.style.display = 'block';
+    });
+  });
+
+  var dropzone = document.getElementById('dropzone');
+  var fileInput = document.getElementById('fileInput');
+  fileInput.addEventListener('change', function (e) { if (e.target.files[0]) handleFile(e.target.files[0]); });
+  dropzone.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fileInput.click(); } });
+
+  function handleFile(file) {
+    var reader = new FileReader();
+    reader.onload = function () {
+      var parsed = parseCSV(String(reader.result));
+      var err = document.getElementById('parseError');
+      if (parsed.error) { err.textContent = parsed.error; err.style.display = 'block'; return; }
+      err.style.display = 'none';
+
+      if (state.mode !== 'live') {
+        state.quotes = parsed.quotes;
+        state.mode = 'sample';
+        renderConnBadge();
+        renderAll();
+        return;
+      }
+
+      var payload = { action: 'bulkImport', quotes: parsed.quotes.map(function (q) {
+        return { customer: q.customer, amount: q.amount, dateSent: isoDate(q.sent), lastContact: q.contact ? isoDate(q.contact) : '', status: q.status };
+      }) };
+      apiPost(payload).then(function (res) {
+        if (!res.ok) throw new Error(res.error || 'Import failed');
+        refreshLive();
+      }).catch(function (e2) {
+        err.textContent = 'Couldn\'t import to your Sheet: ' + e2.message;
+        err.style.display = 'block';
+      });
+    };
+    reader.readAsText(file);
+  }
+
+  document.getElementById('refreshBtn').addEventListener('click', refreshLive);
+
+  // ---------- sample data (preview only, never persisted) ----------
+
+  function mulberry32(seed) {
+    return function () { seed |= 0; seed = (seed + 0x6D2B79F5) | 0; var t = Math.imul(seed ^ (seed >>> 15), 1 | seed); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+  }
+
+  var CUSTOMERS = ['Sarah T.', 'Mike R.', 'The Nguyens', 'Dave P.', 'Colleen M.', 'Aaron W.', 'The Osei Family', 'Janet K.', 'Ryan B.', 'Priya S.', 'Tom H.', 'The Lindsays', 'Kevin O.', 'Marnie F.', 'Chris D.', 'Alicia G.', 'Brad N.', 'The Fenwicks', 'Wendy C.', 'Steve M.'];
+  var JOB_TYPES = [
+    { name: 'Furnace repair', lo: 150, hi: 550 }, { name: 'Furnace install', lo: 3200, hi: 6500 },
+    { name: 'AC repair', lo: 180, hi: 500 }, { name: 'AC install', lo: 2800, hi: 5800 },
+    { name: 'Plumbing repair', lo: 120, hi: 450 }, { name: 'Drain cleaning', lo: 150, hi: 350 },
+    { name: 'Water heater install', lo: 1400, hi: 2600 }, { name: 'Duct cleaning', lo: 250, hi: 450 }
+  ];
+
+  function generateSample() {
+    var rand = mulberry32(20260812);
+    var quotes = [];
+    var startDate = new Date(TODAY); startDate.setMonth(startDate.getMonth() - 6);
+    var totalDays = daysBetween(startDate, TODAY);
+    var count = 150;
+    for (var i = 0; i < count; i++) {
+      var jt = JOB_TYPES[Math.floor(rand() * JOB_TYPES.length)];
+      var amount = Math.round(jt.lo + rand() * (jt.hi - jt.lo));
+      var sentOffset = Math.floor(rand() * totalDays);
+      var sent = new Date(startDate.getTime() + sentOffset * MS_DAY);
+      var customer = CUSTOMERS[Math.floor(rand() * CUSTOMERS.length)] + ' — ' + jt.name;
+      var ageDays = daysBetween(sent, TODAY);
+      var fastFollowUp = rand() < 0.55;
+      var followUpDelay = fastFollowUp ? Math.floor(rand() * 3) : (3 + Math.floor(rand() * 8));
+
+      if (ageDays <= 12) {
+        var hasContact = ageDays > 1 ? rand() < 0.5 : false;
+        var contact = hasContact ? new Date(sent.getTime() + Math.min(followUpDelay, ageDays) * MS_DAY) : null;
+        quotes.push({ id: 's' + i, customer: customer, amount: amount, sent: sent, contact: contact, status: 'pending' });
+      } else {
+        var contactDate = new Date(sent.getTime() + Math.min(followUpDelay, ageDays - 1) * MS_DAY);
+        var won = rand() < (fastFollowUp ? 0.60 : 0.24);
+        quotes.push({ id: 's' + i, customer: customer, amount: amount, sent: sent, contact: contactDate, status: won ? 'won' : 'lost' });
+      }
+    }
+    return quotes;
+  }
+
+  document.getElementById('sampleBtn').addEventListener('click', function () {
+    state.quotes = generateSample();
+    state.mode = 'sample';
+    document.getElementById('parseError').style.display = 'none';
+    renderConnBadge();
+    renderAll();
+  });
+
+  // ---------- boot ----------
+  renderConnBadge();
+  if (isConfigured()) refreshLive();
+
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function () {
+      navigator.serviceWorker.register('sw.js').catch(function () { /* offline shell just won't be available */ });
+    });
+  }
+})();
+</script>
