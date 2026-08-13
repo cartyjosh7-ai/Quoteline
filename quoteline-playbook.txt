@@ -1,0 +1,233 @@
+<meta charset="utf-8">
+<title>Quoteline — Business Playbook</title>
+<style>
+  :root {
+    color-scheme: light;
+    --ink: #12201c; --paper: #f3f5f1; --panel: #ffffff; --panel-2: #fbfbf9;
+    --brass: #a8632c; --teal: #2b5d56;
+    --text-1: #14201d; --text-2: #4d5b55; --text-3: #7c887f;
+    --hairline: rgba(18,32,28,0.14); --hairline-2: rgba(18,32,28,0.08);
+    --good: #1f7a3d; --critical: #b5432f;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:where(:not([data-theme="light"])) {
+      color-scheme: dark;
+      --ink: #eef1ec; --paper: #0e1512; --panel: #172420; --panel-2: #14201c;
+      --brass: #d68f4e; --teal: #7fb3a8;
+      --text-1: #eef1ec; --text-2: #b7c2bc; --text-3: #86938c;
+      --hairline: rgba(238,241,236,0.16); --hairline-2: rgba(238,241,236,0.08);
+      --good: #4fbd6f; --critical: #e66767;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --ink: #eef1ec; --paper: #0e1512; --panel: #172420; --panel-2: #14201c;
+    --brass: #d68f4e; --teal: #7fb3a8;
+    --text-1: #eef1ec; --text-2: #b7c2bc; --text-3: #86938c;
+    --hairline: rgba(238,241,236,0.16); --hairline-2: rgba(238,241,236,0.08);
+    --good: #4fbd6f; --critical: #e66767;
+  }
+  :root[data-theme="light"] {
+    color-scheme: light;
+    --ink: #12201c; --paper: #f3f5f1; --panel: #ffffff; --panel-2: #fbfbf9;
+    --brass: #a8632c; --teal: #2b5d56;
+    --text-1: #14201d; --text-2: #4d5b55; --text-3: #7c887f;
+    --hairline: rgba(18,32,28,0.14); --hairline-2: rgba(18,32,28,0.08);
+    --good: #1f7a3d; --critical: #b5432f;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--paper); color: var(--text-1); font-family: -apple-system, "Segoe UI", system-ui, sans-serif; }
+  body { padding: 0 0 5rem; }
+  h1, h2, h3 { font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, ui-serif, serif; text-wrap: balance; margin: 0; color: var(--text-1); }
+  .tnum { font-variant-numeric: tabular-nums; }
+  a { color: var(--teal); }
+  .wrap { max-width: 44rem; margin: 0 auto; padding: 0 1.5rem; }
+
+  header.top { padding: 3rem 0 2rem; border-bottom: 1px solid var(--hairline); }
+  .eyebrow { font-size: 0.76rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--brass); font-weight: 700; margin-bottom: 0.6rem; }
+  header.top h1 { font-size: clamp(1.9rem, 4.5vw, 2.5rem); font-weight: 500; line-height: 1.15; }
+  header.top .sub { color: var(--text-2); font-size: 1.02rem; margin-top: 0.7rem; max-width: 34rem; line-height: 1.55; }
+  header.top .meta { display: flex; gap: 1.2rem; margin-top: 1.1rem; font-size: 0.82rem; color: var(--text-3); flex-wrap: wrap; }
+
+  nav.toc { background: var(--panel-2); border: 1px solid var(--hairline); border-radius: 10px; padding: 1rem 1.3rem; margin: 2rem 0 0; }
+  nav.toc .lbl { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-3); font-weight: 700; margin-bottom: 0.55rem; }
+  nav.toc ol { margin: 0; padding-left: 1.15rem; columns: 2; column-gap: 1.5rem; }
+  nav.toc li { font-size: 0.88rem; margin-bottom: 0.35rem; break-inside: avoid; }
+  nav.toc a { text-decoration: none; }
+  nav.toc a:hover { text-decoration: underline; }
+
+  main { display: flex; flex-direction: column; }
+  section { padding: 2.4rem 0; border-bottom: 1px solid var(--hairline); }
+  section:last-of-type { border-bottom: none; }
+  section .num { font-family: "Iowan Old Style", Georgia, serif; font-size: 0.95rem; color: var(--brass); font-weight: 700; margin-bottom: 0.3rem; }
+  section h2 { font-size: 1.5rem; font-weight: 500; margin-bottom: 0.9rem; }
+  section p { color: var(--text-2); line-height: 1.65; font-size: 0.97rem; max-width: 40rem; }
+  section p + p { margin-top: 0.8rem; }
+  section h3 { font-size: 1.03rem; font-weight: 600; font-family: inherit; margin: 1.4rem 0 0.6rem; color: var(--text-1); }
+
+  .stat-pair { display: flex; align-items: flex-end; gap: 1.4rem; margin: 1.2rem 0; flex-wrap: wrap; }
+  .stat-pair .num-big { font-family: "Iowan Old Style", Georgia, serif; font-weight: 700; font-size: 2.1rem; line-height: 1; }
+  .stat-pair .fast .num-big { color: var(--brass); }
+  .stat-pair .slow .num-big { color: var(--critical); }
+  .stat-pair .lbl { font-size: 0.76rem; color: var(--text-3); max-width: 8rem; line-height: 1.35; margin-top: 0.3rem; }
+  .stat-pair .vs { font-family: Georgia, serif; font-style: italic; color: var(--text-3); padding-bottom: 0.4rem; }
+
+  ul.plain { margin: 0; padding-left: 1.1rem; color: var(--text-2); }
+  ul.plain li { margin-bottom: 0.5rem; line-height: 1.55; font-size: 0.95rem; }
+  ul.plain li::marker { color: var(--brass); }
+
+  .pricing-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.9rem; margin-top: 1.2rem; }
+  @media (max-width: 640px) { .pricing-grid { grid-template-columns: 1fr; } nav.toc ol { columns: 1; } }
+  .price-box { border: 1px solid var(--hairline); border-radius: 10px; padding: 1.1rem 1.2rem; background: var(--panel); }
+  .price-box .plabel { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-3); font-weight: 700; }
+  .price-box .pval { font-family: "Iowan Old Style", Georgia, serif; font-weight: 700; font-size: 1.5rem; margin: 0.35rem 0 0.5rem; }
+  .price-box.one .pval { color: var(--brass); }
+  .price-box.retainer .pval { color: var(--teal); }
+  .price-box .pdesc { font-size: 0.87rem; color: var(--text-2); line-height: 1.5; }
+
+  table.steps { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+  table.steps td { padding: 0.6rem 0; border-bottom: 1px solid var(--hairline-2); font-size: 0.92rem; color: var(--text-2); vertical-align: top; }
+  table.steps td.n { width: 1.6rem; color: var(--brass); font-weight: 700; font-family: Georgia, serif; }
+  table.steps td.t { font-weight: 600; color: var(--text-1); width: 9rem; }
+
+  .linklist { display: flex; flex-direction: column; gap: 0.5rem; margin-top: 0.8rem; }
+  .linklist a { font-size: 0.94rem; font-weight: 600; }
+  .linklist .desc { color: var(--text-3); font-size: 0.82rem; }
+
+  blockquote.script {
+    margin: 1.1rem 0 0; padding: 1rem 1.2rem; background: var(--panel-2); border-left: 3px solid var(--brass);
+    border-radius: 0 8px 8px 0; font-size: 0.92rem; color: var(--text-1); line-height: 1.6; font-style: italic;
+  }
+
+  .checklist { list-style: none; margin: 1rem 0 0; padding: 0; display: flex; flex-direction: column; gap: 0.55rem; }
+  .checklist li { display: flex; gap: 0.65rem; align-items: flex-start; font-size: 0.94rem; color: var(--text-2); }
+  .checklist .box { flex: none; width: 15px; height: 15px; border: 1.5px solid var(--hairline); border-radius: 4px; margin-top: 0.15rem; }
+
+  .tablescroll { overflow-x: auto; }
+
+  footer.end { padding-top: 2rem; text-align: center; color: var(--text-3); font-size: 0.82rem; }
+</style>
+
+<header class="top">
+  <div class="wrap">
+    <div class="eyebrow">Business playbook · updated 2026-08-12</div>
+    <h1>Quoteline</h1>
+    <p class="sub">A quote-pipeline tracker for Calgary trades, sold as a one-time build with an optional automation retainer. This is the reference doc — offer, pricing, pitch, and outreach plan in one place.</p>
+    <div class="meta">
+      <span>Niche: trades (HVAC, plumbing, electrical)</span>
+      <span>Region: Calgary, AB</span>
+      <span>Model: one-time + optional retainer</span>
+    </div>
+    <nav class="toc">
+      <div class="lbl">Contents</div>
+      <ol>
+        <li><a href="#offer">The offer</a></li>
+        <li><a href="#pricing">Pricing</a></li>
+        <li><a href="#pitch">The pitch</a></li>
+        <li><a href="#setup">Business &amp; tax setup</a></li>
+        <li><a href="#outreach">Outreach plan</a></li>
+        <li><a href="#links">Links &amp; files</a></li>
+        <li><a href="#next">Next steps</a></li>
+      </ol>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <section id="offer">
+    <div class="num">01</div>
+    <h2>The offer</h2>
+    <p>Trades lose jobs not because they're outbid, but because a quote sits untouched until the homeowner calls the next name on the list. Job-management platforms like Jobber handle scheduling and invoicing — none of them tell you which quote needs a call <em>today</em>, or chase it for you.</p>
+    <p>Quoteline is a pipeline tracker that surfaces exactly that: who to call today, ranked by urgency, plus the dollar value of quotes going cold. The sample data makes the case on its own:</p>
+    <div class="stat-pair">
+      <div class="fast"><div class="num-big tnum">65%</div><div class="lbl">close rate — followed up within 2 days</div></div>
+      <div class="vs">vs.</div>
+      <div class="slow"><div class="num-big tnum">14%</div><div class="lbl">close rate — followed up later, or not at all</div></div>
+    </div>
+    <p>Same jobs, same prices, in the sample data — only the follow-up timing changed. That gap is the entire pitch.</p>
+  </section>
+
+  <section id="pricing">
+    <div class="num">02</div>
+    <h2>Pricing</h2>
+    <p>Structured deliberately as one-time-plus-optional, not a forced subscription — the biggest objection a cash-conscious owner has is "another monthly bill."</p>
+    <div class="pricing-grid">
+      <div class="price-box one">
+        <div class="plabel">One-time build</div>
+        <div class="pval tnum">$750 – $1,200</div>
+        <div class="pdesc">The pipeline tracker, built around their quotes, delivered as a private link. No subscription — theirs to keep either way.</div>
+      </div>
+      <div class="price-box retainer">
+        <div class="plabel">Automation retainer · optional</div>
+        <div class="pval tnum">$49 – $99/mo</div>
+        <div class="pdesc">Automatic follow-up texts/emails and post-job review requests, so nothing depends on remembering to open the tracker.</div>
+      </div>
+    </div>
+  </section>
+
+  <section id="pitch">
+    <div class="num">03</div>
+    <h2>The pitch</h2>
+    <h3>Why not Jobber?</h3>
+    <p>Jobber runs $29–249+/month before add-ons — realistically $300–400/month once a small team, users, and payment processing are factored in. It's a full job-management platform: scheduling, dispatch, invoicing. Most solo and small-crew operators only feel the pain of one specific thing it doesn't do — chase a quote — and don't need (or want to pay for) the rest.</p>
+    <h3>How it works, in three steps</h3>
+    <table class="steps">
+      <tr><td class="n">1</td><td class="t">Send your quotes</td><td>Whatever they've got — a Jobber export, a spreadsheet, or nothing. They can start adding quotes by hand immediately.</td></tr>
+      <tr><td class="n">2</td><td class="t">Set the rhythm</td><td>A 15-minute call to decide how fast follow-ups should fire, and what a review request should say.</td></tr>
+      <tr><td class="n">3</td><td class="t">Live within a week</td><td>Delivered as a private link. No subscription required — the retainer is an add-on, not a gate.</td></tr>
+    </table>
+  </section>
+
+  <section id="setup">
+    <div class="num">04</div>
+    <h2>Business &amp; tax setup</h2>
+    <ul class="plain">
+      <li>No formal registration is required to start: a sole proprietor can invoice under their own legal name in Canada.</li>
+      <li>GST/HST registration is only mandatory once revenue exceeds $30,000 in a single calendar quarter, or over four consecutive quarters (CRA's "small supplier" rule) — optional below that.</li>
+      <li>Track income for a T2125 filing at tax time regardless of registration status.</li>
+    </ul>
+  </section>
+
+  <section id="outreach">
+    <div class="num">05</div>
+    <h2>Outreach plan</h2>
+    <p>E-commerce sellers are hard to reach cold (no storefront, hidden contact info, oversaturated with pitches). Trades solve all of that: public licensing registries, phone numbers on the truck, and a referral culture that rewards landing even one client.</p>
+    <h3>Building the prospect list</h3>
+    <table class="steps">
+      <tr><td class="n">1</td><td class="t">City registry</td><td>Browse the <a href="https://dbaservices.calgary.ca/publicinq/Default.aspx?PossePresentation=LicensedTradeContractors&amp;PossePane=Table&amp;PosseObjectId=124631268&amp;ContractorType=All" target="_blank" rel="noopener">Licensed Trade Contractor List</a> by category (electrical, plumbing/gas). Confirms legitimacy — gives business name + neighborhood, not contact info.</td></tr>
+      <tr><td class="n">2</td><td class="t">Google cross-ref</td><td>Search each business name + "Calgary" for their Google Business Profile — phone number, sometimes the owner's name, and a read on their digital presence.</td></tr>
+      <tr><td class="n">3</td><td class="t">HomeStars check</td><td><a href="https://www.homestars.com/find-professionals/calgary-alberta" target="_blank" rel="noopener">HomeStars</a> overlaps heavily with the registry and shows phone + review count directly — active reviewers are warmer prospects, since they already care about winning leads.</td></tr>
+    </table>
+    <h3>Prioritize</h3>
+    <p>Solo-to-5-person crews doing residential work. Bigger commercial-only outfits usually already run full Jobber/ServiceTitan setups with a dedicated ops person — a much harder sell.</p>
+    <h3>First message (text or DM, not cold email)</h3>
+    <blockquote class="script">
+      Hey [Name] — built a quick tool for Calgary [trade] shops that flags which quotes are going cold. Ran it on some sample data: close rate drops from 65% to 14% once follow-up slips past 2 days. No pitch, just a live demo: [link]. If it's useful, I'll build your real version for $750–1,200 one-time — no subscription unless you want the automated-follow-up add-on.
+    </blockquote>
+  </section>
+
+  <section id="links">
+    <div class="num">06</div>
+    <h2>Links &amp; files</h2>
+    <div class="linklist">
+      <div><a href="https://claude.ai/code/artifact/34abe7ca-503b-47a8-9c9c-89363a8bc344" target="_blank" rel="noopener">Quoteline live demo →</a><div class="desc">The pipeline tracker prospects click through from the outreach message.</div></div>
+      <div><span style="font-weight:600;">quoteline-onepager.pdf</span><div class="desc">Sent earlier in this conversation — the one-page PDF pitch, ready to attach once contact details are filled in.</div></div>
+    </div>
+  </section>
+
+  <section id="next">
+    <div class="num">07</div>
+    <h2>Next steps</h2>
+    <ul class="checklist">
+      <li><span class="box"></span>Fill in name / email / phone on the one-pager PDF</li>
+      <li><span class="box"></span>Pull 15–20 businesses from the city registry, cross-referenced for contact info</li>
+      <li><span class="box"></span>Send the first-message script to 5 prospects as a test batch</li>
+      <li><span class="box"></span>Offer the first real build free or discounted in exchange for a testimonial</li>
+      <li><span class="box"></span>Decide the persistence approach for the real software (see next section of this conversation)</li>
+    </ul>
+  </section>
+
+</main>
+
+<footer class="end">Quoteline — internal reference, not for external distribution.</footer>
